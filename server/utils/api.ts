@@ -21,6 +21,24 @@ function apiBase(): string {
   return useRuntimeConfig().apiBase
 }
 
+/** Pull a clean human message out of a Django/DRF error body — handles
+ * {detail}, {error}, {message}, and field maps like
+ * {username: ["username already taken"]}. Never dumps raw JSON. */
+function extractMessage(data: unknown): string {
+  if (typeof data === 'string' && data.trim()) return data
+  if (data && typeof data === 'object') {
+    const obj = data as Record<string, unknown>
+    for (const key of ['detail', 'error', 'message'] as const) {
+      if (typeof obj[key] === 'string') return obj[key] as string
+    }
+    for (const v of Object.values(obj)) {
+      if (typeof v === 'string' && v.trim()) return v
+      if (Array.isArray(v) && typeof v[0] === 'string') return v[0] as string
+    }
+  }
+  return 'Có lỗi xảy ra, thử lại.'
+}
+
 async function djangoFetch<T>(
   event: H3Event | null,
   path: string,
@@ -41,15 +59,7 @@ async function djangoFetch<T>(
   } catch (err: unknown) {
     const e = err as { status?: number; statusCode?: number; data?: unknown }
     const status = e.status ?? e.statusCode ?? 500
-    let message = 'Request failed'
-    if (e.data) {
-      if (typeof e.data === 'string') {
-        message = e.data
-      } else if (typeof e.data === 'object') {
-        const obj = e.data as { error?: string; detail?: string; message?: string }
-        message = obj.error ?? obj.detail ?? obj.message ?? JSON.stringify(obj)
-      }
-    }
+    const message = extractMessage(e.data)
     throw createError({ statusCode: status, statusMessage: message, data: { message } })
   }
 }

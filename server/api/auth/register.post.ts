@@ -23,7 +23,17 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  const res = await djRegister(username, password)
-  setSessionCookie(event, res.token)
-  return { ok: true }
+  try {
+    const res = await djRegister(username, password)
+    setSessionCookie(event, res.token)
+    return { ok: true }
+  } catch (err) {
+    const e = err as { data?: { message?: string }; statusMessage?: string }
+    const raw = (e?.data?.message || e?.statusMessage || '').toLowerCase()
+    if (raw.includes('taken') || raw.includes('already') || raw.includes('exist')) {
+      const msg = 'Tài khoản này đã được dùng. Chọn tên khác nhé.'
+      throw createError({ statusCode: 409, statusMessage: msg, data: { message: msg } })
+    }
+    throw err
+  }
 })

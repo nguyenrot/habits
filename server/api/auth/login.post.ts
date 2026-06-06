@@ -11,7 +11,17 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: 'Nhập đủ tài khoản và mật khẩu.' })
   }
 
-  const res = await djLogin(username, password)
-  setSessionCookie(event, res.token)
-  return { ok: true }
+  try {
+    const res = await djLogin(username, password)
+    setSessionCookie(event, res.token)
+    return { ok: true }
+  } catch (err) {
+    const e = err as { statusCode?: number; data?: { message?: string }; statusMessage?: string }
+    const status = e?.statusCode ?? 0
+    if (status === 400 || status === 401) {
+      const msg = 'Sai tài khoản hoặc mật khẩu.'
+      throw createError({ statusCode: 401, statusMessage: msg, data: { message: msg } })
+    }
+    throw err
+  }
 })
