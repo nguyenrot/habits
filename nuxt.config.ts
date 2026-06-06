@@ -14,8 +14,9 @@ const themePreboot = `
 export default defineNuxtConfig({
   compatibilityDate: '2026-06-06',
 
-  // SSR + Nitro. Habit data is per-user and always fresh — no route rules.
-  ssr: true,
+  // SPA like ledger — auth is a localStorage token, so SSR would only flash a
+  // no-auth shell. The client talks to api.kynguyen.cc directly with Bearer.
+  ssr: false,
 
   devtools: { enabled: false },
 
@@ -26,9 +27,6 @@ export default defineNuxtConfig({
   },
 
   runtimeConfig: {
-    // server-only — Django API base used by server/ routes
-    apiBase: process.env.NUXT_API_BASE || process.env.API_URL || 'https://api.kynguyen.cc',
-    cookieDomain: process.env.COOKIE_DOMAIN || '',
     public: {
       apiBase: process.env.NUXT_PUBLIC_API_BASE || 'https://api.kynguyen.cc',
     },

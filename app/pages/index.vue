@@ -1,15 +1,14 @@
 <script setup lang="ts">
 import { PhSparkle } from '@phosphor-icons/vue'
-import type { TodayItem, TodayResponse } from '~/lib/habit'
+import type { TodayItem } from '~/lib/habit'
 
-const { data } = await useFetch<{ session: unknown; today: TodayResponse }>('/api/bootstrap/today', {
-  key: 'bs-today',
+const api = useApi()
+const { data } = useAsyncData('today', () => api.today())
+
+const items = ref<TodayItem[]>([])
+watchEffect(() => {
+  items.value = data.value?.items ?? []
 })
-if (!data.value?.session) {
-  await navigateTo('/login', { replace: true })
-}
-
-const items = ref<TodayItem[]>(data.value?.today?.items ?? [])
 const doneCount = computed(() => items.value.filter((i) => i.done).length)
 const total = computed(() => items.value.length)
 const ratio = computed(() => (total.value ? doneCount.value / total.value : 0))

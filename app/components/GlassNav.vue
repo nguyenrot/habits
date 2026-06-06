@@ -8,10 +8,10 @@ const dateStr = new Intl.DateTimeFormat('vi-VN', {
   timeZone: 'Asia/Ho_Chi_Minh',
 }).format(new Date())
 
-const api = useApi()
-async function signOut() {
-  await api.logout().catch(() => {})
-  window.location.assign('/login')
+const { clearToken } = useToken()
+function signOut() {
+  // clearing the token flips app.vue back to the TokenGate — no navigation needed
+  clearToken()
 }
 </script>
 

@@ -1,16 +1,10 @@
 <script setup lang="ts">
 import { PhFlame, PhChartLineUp, PhCalendarDots, PhListChecks, PhChartBar } from '@phosphor-icons/vue'
-import { pct, type StatsResponse } from '~/lib/habit'
+import { pct } from '~/lib/habit'
 
-const { data } = await useFetch<{ session: unknown; stats: StatsResponse | null }>(
-  '/api/bootstrap/insights',
-  { key: 'bs-insights' },
-)
-if (!data.value?.session) {
-  await navigateTo('/login', { replace: true })
-}
-
-const stats = computed(() => data.value?.stats ?? null)
+const api = useApi()
+const { data } = useAsyncData('stats', () => api.stats())
+const stats = computed(() => data.value ?? null)
 const hasData = computed(() => !!stats.value && stats.value.habits.length > 0)
 const heat = computed(() => (stats.value?.heatmap ?? []).map((c) => ({ date: c.date, ratio: c.ratio })))
 

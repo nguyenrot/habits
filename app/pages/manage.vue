@@ -2,15 +2,10 @@
 import { PhPlus, PhArchive, PhArrowCounterClockwise, PhTrash } from '@phosphor-icons/vue'
 import { gradientFor, type Habit } from '~/lib/habit'
 
-const { data, refresh } = await useFetch<{ session: unknown; habits: Habit[]; archived: Habit[] }>(
-  '/api/bootstrap/manage',
-  { key: 'bs-manage' },
-)
-if (!data.value?.session) {
-  await navigateTo('/login', { replace: true })
-}
-
 const api = useApi()
+const { data, refresh } = useAsyncData('manage', () => api.listHabits({ include_archived: '1' }))
+const habits = computed(() => (data.value ?? []).filter((h) => !h.archived))
+const archived = computed(() => (data.value ?? []).filter((h) => h.archived))
 const editorOpen = ref(false)
 const editing = ref<Habit | null>(null)
 const showArchived = ref(false)
@@ -48,8 +43,8 @@ useHead({ title: 'Quản lý — Habits' })
     </div>
 
     <HabitList
-      v-if="data?.habits?.length"
-      :habits="data.habits"
+      v-if="habits.length"
+      :habits="habits"
       @edit="openEdit"
       @changed="refresh"
     />
@@ -60,12 +55,12 @@ useHead({ title: 'Quản lý — Habits' })
     </div>
 
     <!-- archived -->
-    <div v-if="data?.archived?.length" class="mt-7">
+    <div v-if="archived.length" class="mt-7">
       <button class="t-ink-2 flex items-center gap-2 text-[13px] font-semibold" @click="showArchived = !showArchived">
-        <PhArchive :size="16" /> Đã lưu trữ ({{ data.archived.length }})
+        <PhArchive :size="16" /> Đã lưu trữ ({{ archived.length }})
       </button>
       <div v-if="showArchived" class="mt-3 flex flex-col gap-2">
-        <div v-for="h in data.archived" :key="h.id" class="glass flex items-center gap-3 px-4 py-2.5 opacity-80">
+        <div v-for="h in archived" :key="h.id" class="glass flex items-center gap-3 px-4 py-2.5 opacity-80">
           <span class="ar-chip" :style="{ background: gradientFor(h.color) }">
             <HabitIcon :name="h.icon" :size="16" class="text-white" />
           </span>

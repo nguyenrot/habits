@@ -1,17 +1,26 @@
 <script setup lang="ts">
 import { PhCaretLeft, PhPencilSimple } from '@phosphor-icons/vue'
-import { gradientFor, scheduleLabel, type Habit, type HabitLog } from '~/lib/habit'
+import { gradientFor, scheduleLabel, type HabitLog } from '~/lib/habit'
 
 const route = useRoute()
 const id = route.params.id as string
+const api = useApi()
 
-const { data, refresh } = await useFetch<{ session: unknown; habit: Habit | null; logs: HabitLog[] }>(
-  '/api/bootstrap/habit',
-  { key: `bs-habit-${id}`, query: { id } },
-)
-if (!data.value?.session) {
-  await navigateTo('/login', { replace: true })
-}
+// Anchor to today's Asia/Ho_Chi_Minh date; iterate with UTC methods for a stable sequence.
+const todayVN = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' }).format(new Date())
+const fromVN = (() => {
+  const d = new Date(todayVN + 'T00:00:00Z')
+  d.setUTCDate(d.getUTCDate() - 370)
+  return d.toISOString().slice(0, 10)
+})()
+
+const { data, refresh } = useAsyncData(`habit-${id}`, async () => {
+  const [habit, logs] = await Promise.all([
+    api.getHabit(id).catch(() => null),
+    api.listLogs({ habit: id, date_from: fromVN, date_to: todayVN }).catch(() => [] as HabitLog[]),
+  ])
+  return { habit, logs }
+})
 
 const habit = computed(() => data.value?.habit ?? null)
 const logs = computed(() => data.value?.logs ?? [])
@@ -23,10 +32,6 @@ async function onSaved() {
 }
 
 const completedSet = computed(() => new Set(logs.value.filter((l) => l.completed).map((l) => l.date)))
-
-// Anchor to today's Asia/Ho_Chi_Minh date, then iterate with UTC methods so the
-// cell sequence is identical on SSR and client regardless of the runtime TZ.
-const todayVN = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' }).format(new Date())
 
 const cells = computed(() => {
   const out: { date: string; ratio: number }[] = []
