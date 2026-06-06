@@ -1,0 +1,28 @@
+{
+  "name": "habits-pkn",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Habits — habit tracker · habits.kynguyen.cc",
+  "type": "module",
+  "scripts": {
+    "build": "nuxt build",
+    "dev": "nuxt dev --port 3009",
+    "generate": "nuxt generate",
+    "preview": "nuxt preview --port 3009",
+    "postinstall": "nuxt prepare",
+    "typecheck": "nuxt typecheck"
+  },
+  "dependencies": {
+    "@phosphor-icons/vue": "^2.2.1",
+    "nuxt": "^4.0.0",
+    "vue": "^3.5.0",
+    "vue-router": "^4.4.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.0.0",
+    "@types/node": "^22.0.0",
+    "tailwindcss": "^4.0.0",
+    "typescript": "^5.6.0",
+    "vue-tsc": "^2.1.0"
+  }
+}

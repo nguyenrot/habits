@@ -1,0 +1,230 @@
+@import "tailwindcss";
+
+/* Manual dark mode via the .dark class on <html> (set by the preboot script). */
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display",
+    "Segoe UI", Roboto, system-ui, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, monospace;
+}
+
+/* ── Design tokens ──────────────────────────────────────────────────────── */
+:root {
+  --accent: #34c759;
+  --accent-press: #1e9e4a;
+  --on-accent: #04130a;
+
+  --ink: #0b0f0e;
+  --ink-2: #57605c;
+  --ink-3: #8a918d;
+
+  --bg-1: #eef2f0;
+  --bg-2: #e6ece9;
+
+  --glass-bg: rgba(255, 255, 255, 0.55);
+  --glass-bg-strong: rgba(255, 255, 255, 0.72);
+  --glass-bg-2: rgba(255, 255, 255, 0.42);
+  --glass-border: rgba(255, 255, 255, 0.65);
+  --glass-spec: rgba(255, 255, 255, 0.85);
+  --glass-shadow: 0 18px 50px -18px rgba(20, 40, 30, 0.35);
+
+  --track: rgba(10, 20, 16, 0.10);
+  --hair: rgba(10, 20, 16, 0.08);
+
+  --mesh-a: rgba(52, 199, 89, 0.20);
+  --mesh-b: rgba(255, 200, 110, 0.18);
+  --mesh-c: rgba(255, 128, 158, 0.15);
+  --mesh-d: rgba(90, 200, 255, 0.12);
+
+  --r-lg: 28px;
+  --r-md: 20px;
+  --r-sm: 14px;
+}
+
+.dark {
+  --accent: #30d158;
+  --accent-press: #41dd68;
+  --on-accent: #04130a;
+
+  --ink: #eaf0ee;
+  --ink-2: #9aa39f;
+  --ink-3: #6c736f;
+
+  --bg-1: #090b0c;
+  --bg-2: #0c0f10;
+
+  --glass-bg: rgba(28, 31, 33, 0.48);
+  --glass-bg-strong: rgba(32, 36, 38, 0.66);
+  --glass-bg-2: rgba(36, 40, 42, 0.40);
+  --glass-border: rgba(255, 255, 255, 0.12);
+  --glass-spec: rgba(255, 255, 255, 0.16);
+  --glass-shadow: 0 22px 60px -20px rgba(0, 0, 0, 0.65);
+
+  --track: rgba(255, 255, 255, 0.10);
+  --hair: rgba(255, 255, 255, 0.07);
+
+  --mesh-a: rgba(48, 209, 88, 0.18);
+  --mesh-b: rgba(224, 164, 94, 0.14);
+  --mesh-c: rgba(120, 200, 255, 0.12);
+  --mesh-d: rgba(52, 199, 89, 0.10);
+}
+
+/* ── Base + ambient backdrop ────────────────────────────────────────────── */
+@layer base {
+  html {
+    color-scheme: light;
+  }
+  html.dark {
+    color-scheme: dark;
+  }
+  body {
+    font-family: var(--font-sans);
+    color: var(--ink);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    min-height: 100dvh;
+    position: relative;
+    overflow-x: hidden;
+  }
+  /* flat base colour */
+  body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -3;
+    background: linear-gradient(180deg, var(--bg-1), var(--bg-2));
+  }
+  /* drifting mesh the glass refracts */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: -25%;
+    z-index: -2;
+    background:
+      radial-gradient(680px 520px at 14% 8%, var(--mesh-a), transparent 60%),
+      radial-gradient(620px 560px at 86% 16%, var(--mesh-b), transparent 62%),
+      radial-gradient(760px 640px at 72% 96%, var(--mesh-c), transparent 60%),
+      radial-gradient(620px 600px at 30% 80%, var(--mesh-d), transparent 62%);
+    filter: saturate(115%);
+    animation: drift 30s ease-in-out infinite alternate;
+  }
+  ::selection {
+    background: color-mix(in oklab, var(--accent) 35%, transparent);
+  }
+}
+
+@keyframes drift {
+  0% { transform: translate3d(0, 0, 0) scale(1); }
+  100% { transform: translate3d(-3%, 2%, 0) scale(1.08); }
+}
+@keyframes pop-in {
+  from { opacity: 0; transform: translateY(10px) scale(0.985); }
+  to { opacity: 1; transform: none; }
+}
+
+/* ── Glass + components ─────────────────────────────────────────────────── */
+@layer components {
+  .glass {
+    background: var(--glass-bg);
+    -webkit-backdrop-filter: blur(26px) saturate(180%);
+    backdrop-filter: blur(26px) saturate(180%);
+    border: 1px solid var(--glass-border);
+    box-shadow:
+      inset 0 1px 0 var(--glass-spec),
+      inset 0 -1px 0 rgba(255, 255, 255, 0.05),
+      var(--glass-shadow);
+    border-radius: var(--r-lg);
+  }
+  .glass-strong {
+    background: var(--glass-bg-strong);
+    -webkit-backdrop-filter: blur(34px) saturate(200%);
+    backdrop-filter: blur(34px) saturate(200%);
+    border: 1px solid var(--glass-border);
+    box-shadow:
+      inset 0 1px 0 var(--glass-spec),
+      var(--glass-shadow);
+    border-radius: var(--r-lg);
+  }
+  .pill {
+    background: var(--glass-bg);
+    -webkit-backdrop-filter: blur(26px) saturate(180%);
+    backdrop-filter: blur(26px) saturate(180%);
+    border: 1px solid var(--glass-border);
+    box-shadow:
+      inset 0 1px 0 var(--glass-spec),
+      var(--glass-shadow);
+    border-radius: 999px;
+  }
+  /* graceful fallback where backdrop-filter is unsupported */
+  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .glass, .glass-strong, .pill { background: var(--glass-bg-strong); }
+    :root { --glass-bg: rgba(255, 255, 255, 0.92); --glass-bg-strong: rgba(255, 255, 255, 0.96); }
+    .dark { --glass-bg: rgba(26, 29, 31, 0.95); --glass-bg-strong: rgba(30, 34, 36, 0.97); }
+  }
+
+  .t-ink { color: var(--ink); }
+  .t-ink-2 { color: var(--ink-2); }
+  .t-ink-3 { color: var(--ink-3); }
+  .text-accent { color: var(--accent-press); }
+  .bg-accent { background: var(--accent); }
+  .border-hair { border-color: var(--hair); }
+  .bg-track { background: var(--track); }
+  .mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+
+  .tap { transition: transform 0.16s cubic-bezier(0.16, 1, 0.3, 1); }
+  .tap:active { transform: scale(0.97); }
+
+  .icon-btn {
+    width: 38px; height: 38px; border-radius: 50%;
+    display: grid; place-items: center;
+    color: var(--ink);
+    background: var(--glass-bg-2);
+    border: 1px solid var(--glass-border);
+    cursor: pointer;
+    transition: transform 0.16s ease;
+  }
+  .icon-btn:active { transform: scale(0.92); }
+
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    height: 46px; padding: 0 20px; border-radius: 999px;
+    font-weight: 600; font-size: 15px; cursor: pointer; border: 1px solid transparent;
+    transition: transform 0.16s cubic-bezier(0.16, 1, 0.3, 1), filter 0.2s ease;
+  }
+  .btn:active { transform: scale(0.975); }
+  .btn-accent {
+    background: var(--accent); color: var(--on-accent);
+    box-shadow: 0 10px 24px -10px color-mix(in oklab, var(--accent) 75%, transparent),
+      inset 0 1px 0 rgba(255, 255, 255, 0.45);
+  }
+  .btn-accent:hover { filter: brightness(1.04); }
+  .btn-soft {
+    background: var(--glass-bg-2); color: var(--ink); border-color: var(--glass-border);
+  }
+  .btn-ghost { background: transparent; color: var(--ink-2); }
+
+  .field {
+    width: 100%; height: 46px; padding: 0 14px; border-radius: var(--r-sm);
+    background: var(--glass-bg-2); color: var(--ink);
+    border: 1px solid var(--glass-border);
+    outline: none; font-size: 15px;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+  .field::placeholder { color: var(--ink-3); }
+  .field:focus {
+    border-color: color-mix(in oklab, var(--accent) 60%, var(--glass-border));
+    box-shadow: 0 0 0 4px color-mix(in oklab, var(--accent) 18%, transparent);
+  }
+  textarea.field { height: auto; padding: 12px 14px; resize: vertical; line-height: 1.5; }
+
+  .label { font-size: 13px; font-weight: 600; color: var(--ink-2); margin-bottom: 7px; display: block; }
+
+  .stack-in { animation: pop-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) both; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body::before { animation: none; }
+  .stack-in { animation: none; }
+  * { transition-duration: 0.001ms !important; }
+}
