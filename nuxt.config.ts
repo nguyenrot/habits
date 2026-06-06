@@ -26,6 +26,16 @@ export default defineNuxtConfig({
     plugins: [tailwindcss()],
   },
 
+  // SPA HTML must never be heuristically cached by the browser — a stale index
+  // points at old chunk hashes and breaks the app after a deploy. Hashed
+  // /_nuxt/* assets stay immutable.
+  nitro: {
+    routeRules: {
+      '/_nuxt/**': { headers: { 'cache-control': 'public, max-age=31536000, immutable' } },
+      '/**': { headers: { 'cache-control': 'no-cache' } },
+    },
+  },
+
   runtimeConfig: {
     public: {
       apiBase: process.env.NUXT_PUBLIC_API_BASE || 'https://api.kynguyen.cc',
