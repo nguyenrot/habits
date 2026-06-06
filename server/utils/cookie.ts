@@ -4,7 +4,7 @@
  * shared across the ecosystem.
  */
 import type { H3Event } from 'h3'
-import { setCookie, deleteCookie } from 'h3'
+import { setCookie, deleteCookie, getRequestHost } from 'h3'
 import { SESSION_COOKIE } from './api'
 
 function options() {
@@ -26,8 +26,18 @@ export function setSessionCookie(event: H3Event, token: string) {
 
 export function clearSessionCookie(event: H3Event) {
   const cfg = useRuntimeConfig()
-  deleteCookie(event, SESSION_COOKIE, {
-    path: '/',
-    domain: cfg.cookieDomain ? cfg.cookieDomain : undefined,
-  })
+
+  // The x106_session cookie may have been set host-only by this app OR with the
+  // shared `.kynguyen.cc` domain by a sibling app / the API. A delete only takes
+  // effect when domain + path match how the cookie was set, so we clear every
+  // scope it could live under — otherwise logout silently leaves a session that
+  // the auth middleware keeps honouring.
+  deleteCookie(event, SESSION_COOKIE, { path: '/' }) // host-only
+  if (cfg.cookieDomain) {
+    deleteCookie(event, SESSION_COOKIE, { path: '/', domain: cfg.cookieDomain })
+  }
+  const host = getRequestHost(event) || ''
+  if (host.endsWith('kynguyen.cc')) {
+    deleteCookie(event, SESSION_COOKIE, { path: '/', domain: '.kynguyen.cc' })
+  }
 }
