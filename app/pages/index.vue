@@ -23,10 +23,17 @@ function onError(msg: string) {
   toastTimer = setTimeout(() => (toast.value = ''), 2600)
 }
 
-const greeting = (() => {
-  const h = new Date().getHours()
-  return h < 11 ? 'Chào buổi sáng' : h < 14 ? 'Chào buổi trưa' : h < 18 ? 'Chào buổi chiều' : 'Chào buổi tối'
-})()
+// Compute the hour in Asia/Ho_Chi_Minh so SSR (server TZ may be UTC) and the
+// client agree — otherwise the greeting causes a hydration mismatch.
+const vnHour = Number(
+  new Intl.DateTimeFormat('en-GB', {
+    hour: 'numeric',
+    hour12: false,
+    timeZone: 'Asia/Ho_Chi_Minh',
+  }).format(new Date()),
+)
+const greeting =
+  vnHour < 11 ? 'Chào buổi sáng' : vnHour < 14 ? 'Chào buổi trưa' : vnHour < 18 ? 'Chào buổi chiều' : 'Chào buổi tối'
 const dateLabel = new Intl.DateTimeFormat('vi-VN', {
   weekday: 'long',
   day: 'numeric',

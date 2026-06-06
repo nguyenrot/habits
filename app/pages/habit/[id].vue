@@ -22,19 +22,19 @@ async function onSaved() {
   await refresh()
 }
 
-function vnDate(d: Date): string {
-  return d.toLocaleDateString('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' })
-}
-
 const completedSet = computed(() => new Set(logs.value.filter((l) => l.completed).map((l) => l.date)))
+
+// Anchor to today's Asia/Ho_Chi_Minh date, then iterate with UTC methods so the
+// cell sequence is identical on SSR and client regardless of the runtime TZ.
+const todayVN = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' }).format(new Date())
 
 const cells = computed(() => {
   const out: { date: string; ratio: number }[] = []
-  const today = new Date()
+  const base = new Date(todayVN + 'T00:00:00Z')
   for (let i = 370; i >= 0; i--) {
-    const d = new Date(today)
-    d.setDate(d.getDate() - i)
-    const ds = vnDate(d)
+    const d = new Date(base)
+    d.setUTCDate(d.getUTCDate() - i)
+    const ds = d.toISOString().slice(0, 10)
     out.push({ date: ds, ratio: completedSet.value.has(ds) ? 1 : 0 })
   }
   return out
