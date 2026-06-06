@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { PhCheckCircle } from '@phosphor-icons/vue'
+import { PhCheckCircle, PhSignOut } from '@phosphor-icons/vue'
 
 const dateStr = new Intl.DateTimeFormat('vi-VN', {
   weekday: 'short',
@@ -7,6 +7,12 @@ const dateStr = new Intl.DateTimeFormat('vi-VN', {
   month: 'short',
   timeZone: 'Asia/Ho_Chi_Minh',
 }).format(new Date())
+
+const api = useApi()
+async function signOut() {
+  await api.logout().catch(() => {})
+  window.location.assign('/login')
+}
 </script>
 
 <template>
@@ -23,5 +29,6 @@ const dateStr = new Intl.DateTimeFormat('vi-VN', {
       <span class="t-ink-2 hidden text-[13px] mono sm:inline">{{ dateStr }}</span>
     </ClientOnly>
     <ThemeToggle />
+    <button class="icon-btn tap" aria-label="Đăng xuất" @click="signOut"><PhSignOut :size="18" /></button>
   </header>
 </template>
