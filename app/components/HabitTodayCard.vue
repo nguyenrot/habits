@@ -28,28 +28,46 @@ function msgOf(e: unknown): string {
   return x?.data?.message || x?.statusMessage || 'Lỗi lưu, thử lại.'
 }
 
-async function setCount(n: number) {
+// Serialized upsert queue: rapid +/− taps used to fire concurrent POSTs whose
+// responses could resolve out of order, snapping the count backwards. Requests
+// now run one at a time on a promise chain; superseded taps are coalesced so
+// only the LAST issued request actually sends (with the latest absolute count)
+// and only its response is applied to the UI.
+let upsertChain: Promise<void> = Promise.resolve()
+let upsertSeq = 0
+// Last server-confirmed state — what we roll back to if the final upsert fails.
+let confirmedCount = props.item.log?.count ?? 0
+let confirmedDone = props.item.done
+
+function setCount(n: number) {
   const clamped = Math.max(0, Math.min(999, n))
-  const prevCount = count.value
-  const prevDone = done.value
   count.value = clamped
   done.value = clamped >= target.value
   emit('update', done.value)
+  const seq = ++upsertSeq
   busy.value = true
-  try {
-    const res = await api.upsertLog({ habit: h.value.id, count: clamped })
-    logId.value = res.id
-    count.value = res.count
-    done.value = res.completed
-    emit('update', res.completed)
-  } catch (e) {
-    count.value = prevCount
-    done.value = prevDone
-    emit('update', prevDone)
-    emit('error', msgOf(e))
-  } finally {
-    busy.value = false
-  }
+  upsertChain = upsertChain.then(async () => {
+    // A newer tap superseded this one — let the latest request send the final count.
+    if (seq !== upsertSeq) return
+    try {
+      const res = await api.upsertLog({ habit: h.value.id, count: count.value })
+      if (seq !== upsertSeq) return
+      logId.value = res.id
+      count.value = res.count
+      done.value = res.completed
+      confirmedCount = res.count
+      confirmedDone = res.completed
+      emit('update', res.completed)
+    } catch (e) {
+      if (seq !== upsertSeq) return
+      count.value = confirmedCount
+      done.value = confirmedDone
+      emit('update', confirmedDone)
+      emit('error', msgOf(e))
+    } finally {
+      if (seq === upsertSeq) busy.value = false
+    }
+  })
 }
 
 async function toggle() {

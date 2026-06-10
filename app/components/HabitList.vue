@@ -2,8 +2,10 @@
 import { PhPencilSimple, PhArchive, PhTrash, PhCaretUp, PhCaretDown } from '@phosphor-icons/vue'
 import { gradientFor, scheduleLabel, type Habit } from '~/lib/habit'
 
+import { errMsg } from '~/composables/useToast'
+
 const props = defineProps<{ habits: Habit[] }>()
-const emit = defineEmits<{ (e: 'edit', h: Habit): void; (e: 'changed'): void }>()
+const emit = defineEmits<{ (e: 'edit', h: Habit): void; (e: 'changed'): void; (e: 'error', msg: string): void }>()
 const api = useApi()
 
 const list = ref<Habit[]>([...props.habits])
@@ -12,23 +14,38 @@ watch(
   (h) => (list.value = [...h]),
 )
 
+// Mutations must never fail silently: on error, surface a toast via the parent
+// (same mechanism as HabitTodayCard) and still emit 'changed' so the parent's
+// refresh() re-syncs the list with the server (rolling back optimistic moves).
 async function move(idx: number, dir: -1 | 1) {
   const j = idx + dir
   if (j < 0 || j >= list.value.length) return
   const arr = list.value
   ;[arr[idx], arr[j]] = [arr[j]!, arr[idx]!]
-  await api.reorder(arr.map((h, i) => ({ id: h.id, sort_order: i }))).catch(() => {})
+  try {
+    await api.reorder(arr.map((h, i) => ({ id: h.id, sort_order: i })))
+  } catch (e) {
+    emit('error', errMsg(e, 'Không sắp xếp được, thử lại.'))
+  }
   emit('changed')
 }
 
 async function archive(h: Habit) {
-  await api.archiveHabit(h.id).catch(() => {})
+  try {
+    await api.archiveHabit(h.id)
+  } catch (e) {
+    emit('error', errMsg(e, 'Không lưu trữ được, thử lại.'))
+  }
   emit('changed')
 }
 
 async function remove(h: Habit) {
   if (!confirm(`Xoá "${h.name}"? Mọi lượt check-in của nó cũng bị xoá.`)) return
-  await api.deleteHabit(h.id).catch(() => {})
+  try {
+    await api.deleteHabit(h.id)
+  } catch (e) {
+    emit('error', errMsg(e, 'Không xoá được, thử lại.'))
+  }
   emit('changed')
 }
 </script>

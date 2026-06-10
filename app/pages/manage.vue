@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { PhPlus, PhArchive, PhArrowCounterClockwise, PhTrash } from '@phosphor-icons/vue'
 import { gradientFor, type Habit } from '~/lib/habit'
+import { errMsg } from '~/composables/useToast'
 
 const api = useApi()
+const { message: toast, show: showToast } = useToast()
 const { data, refresh } = useAsyncData('manage', () => api.listHabits({ include_archived: '1' }))
 const habits = computed(() => (data.value ?? []).filter((h) => !h.archived))
 const archived = computed(() => (data.value ?? []).filter((h) => h.archived))
@@ -22,13 +24,23 @@ async function onSaved() {
   editorOpen.value = false
   await refresh()
 }
+// Mutations must never fail silently — show the shared toast on error, keep
+// the refresh() so the UI re-syncs with the server either way.
 async function unarchive(h: Habit) {
-  await api.unarchiveHabit(h.id).catch(() => {})
+  try {
+    await api.unarchiveHabit(h.id)
+  } catch (e) {
+    showToast(errMsg(e, 'Không khôi phục được, thử lại.'))
+  }
   await refresh()
 }
 async function removeArchived(h: Habit) {
   if (!confirm(`Xoá hẳn "${h.name}"?`)) return
-  await api.deleteHabit(h.id).catch(() => {})
+  try {
+    await api.deleteHabit(h.id)
+  } catch (e) {
+    showToast(errMsg(e, 'Không xoá được, thử lại.'))
+  }
   await refresh()
 }
 
@@ -47,6 +59,7 @@ useHead({ title: 'Quản lý — Habits' })
       :habits="habits"
       @edit="openEdit"
       @changed="refresh"
+      @error="showToast"
     />
     <div v-else class="glass px-6 py-12 text-center stack-in">
       <p class="font-semibold">Chưa có thói quen</p>
@@ -72,10 +85,25 @@ useHead({ title: 'Quản lý — Habits' })
     </div>
 
     <HabitEditor :open="editorOpen" :habit="editing" @close="editorOpen = false" @saved="onSaved" />
+
+    <Transition name="toast">
+      <div v-if="toast" class="pill fixed bottom-24 left-1/2 z-50 -translate-x-1/2 px-4 py-2 text-[13px]">
+        {{ toast }}
+      </div>
+    </Transition>
   </div>
 </template>
 
 <style scoped>
+.toast-enter-active,
+.toast-leave-active {
+  transition: opacity 0.25s, transform 0.25s;
+}
+.toast-enter-from,
+.toast-leave-to {
+  opacity: 0;
+  transform: translate(-50%, 8px);
+}
 .ar-chip {
   width: 30px;
   height: 30px;

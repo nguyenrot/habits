@@ -51,10 +51,12 @@ async function login() {
   busy.value = true
   error.value = ''
   try {
+    // Validate FIRST with the candidate token passed explicitly — committing it
+    // via setToken before validation would swap app.vue to the main app and
+    // remount a fresh TokenGate on 401, so the user would never see the error.
+    await api.me(input.value)
     setToken(input.value)
-    await api.me()
   } catch (e) {
-    setToken(null)
     error.value =
       e instanceof ApiError && e.status === 401
         ? 'Token không tồn tại. Nhập lại hoặc tạo mới.'
@@ -105,7 +107,7 @@ async function login() {
           </div>
           <input
             v-model="input"
-            class="field mono text-[17px] uppercase tracking-[0.18em]"
+            class="field mono text-[17px] tracking-[0.18em]"
             spellcheck="false"
             autocomplete="off"
             autocapitalize="off"

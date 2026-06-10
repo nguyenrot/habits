@@ -37,7 +37,9 @@ export const useApi = () => {
       'Content-Type': 'application/json',
       ...((init.headers as Record<string, string>) || {}),
     }
-    if (token.value) headers['Authorization'] = `Bearer ${token.value}`
+    // An explicit Authorization header (e.g. validating a candidate token at
+    // login, before committing it to state) wins over the stored token.
+    if (!headers['Authorization'] && token.value) headers['Authorization'] = `Bearer ${token.value}`
 
     const res = await fetch(`${base}${path}`, { ...init, headers })
     if (!res.ok) {
@@ -67,7 +69,13 @@ export const useApi = () => {
         method: 'POST',
         body: JSON.stringify({ token: raw }),
       }),
-    me: () => apiFetch<{ id: string; created_at: string }>('/api/v1/habits/me'),
+    /** Pass `explicitToken` to verify a candidate token WITHOUT it being in
+     * state yet (login flow validates first, commits via setToken on success). */
+    me: (explicitToken?: string) =>
+      apiFetch<{ id: string; created_at: string }>(
+        '/api/v1/habits/me',
+        explicitToken ? { headers: { Authorization: `Bearer ${explicitToken}` } } : {},
+      ),
 
     // habits
     listHabits: (params: { include_archived?: string; category?: string; tag?: string } = {}) =>

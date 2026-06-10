@@ -14,13 +14,7 @@ const total = computed(() => items.value.length)
 const ratio = computed(() => (total.value ? doneCount.value / total.value : 0))
 const remaining = computed(() => total.value - doneCount.value)
 
-const toast = ref('')
-let toastTimer: ReturnType<typeof setTimeout> | undefined
-function onError(msg: string) {
-  toast.value = msg
-  clearTimeout(toastTimer)
-  toastTimer = setTimeout(() => (toast.value = ''), 2600)
-}
+const { message: toast, show: onError } = useToast()
 
 // Compute the hour in Asia/Ho_Chi_Minh so SSR (server TZ may be UTC) and the
 // client agree — otherwise the greeting causes a hydration mismatch.
