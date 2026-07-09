@@ -10,7 +10,6 @@ if (import.meta.client) apply()
 
 <template>
   <div>
-    <WorldCupBanner />
     <TokenGate v-if="!token" />
     <NuxtLayout v-else>
       <NuxtPage />
